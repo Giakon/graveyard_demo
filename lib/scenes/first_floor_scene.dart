@@ -282,6 +282,7 @@ Future<void> _loadInteractables(TiledComponent sourceMap) async {
 
     final game = findGame()! as BeachHouseGame;
     game.camera.viewfinder.anchor = Anchor.center;
+    //game.camera.viewfinder.zoom = 1.5;
     game.camera.follow(player);
         setupCat();
 

@@ -37,6 +37,22 @@ void startEnding() {
   showEnding.value = true;
 }
 
+  void dismissThoughts() {
+    void propagate(Component component) {
+      if (component is Player) {
+        component.touchDismissThought();
+      }
+
+      for (final child in component.children) {
+        propagate(child);
+      }
+    }
+
+    for (final child in children) {
+      propagate(child);
+    }
+  }
+
   @override
   Future<void> onLoad() async {
     add(

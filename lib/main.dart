@@ -1,4 +1,5 @@
 import 'package:flame/game.dart';
+import 'package:flame/components.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,7 @@ import 'game.dart';
 import 'ui/hotbar.dart';
 import 'widgets/task_list.dart';
 import 'mobile_input.dart';
+import 'components/player.dart';
 
 void main() {
   final game = BeachHouseGame();
@@ -66,8 +68,11 @@ class _GameScreenState extends State<_GameScreen> {
 
         return KeyEventResult.ignored;
       },
-      child: Stack(
-        children: [
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: widget.game.dismissThoughts,
+        child: Stack(
+          children: [
           // =================================================================
           // GAME
           // =================================================================
@@ -124,12 +129,11 @@ class _GameScreenState extends State<_GameScreen> {
           // =================================================================
 
           if (_showMobileControls && widget.game.gameStarted)
-            const Positioned.fill(
-              child: IgnorePointer(
-                ignoring: false,
-                child: _MobileControls(),
-              ),
-            ),
+  Positioned.fill(
+    child: _MobileControls(
+      game: widget.game,
+    ),
+  ),
 
           // =================================================================
           // START SCREEN
@@ -160,7 +164,8 @@ class _GameScreenState extends State<_GameScreen> {
               );
             },
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -169,22 +174,54 @@ class _GameScreenState extends State<_GameScreen> {
 // ===========================================================================
 // MOBILE CONTROLS
 // ===========================================================================
-
+// ===========================================================================
+// MOBILE CONTROLS
+// ===========================================================================
 class _MobileControls extends StatelessWidget {
-  const _MobileControls();
+  const _MobileControls({
+    required this.game,
+  });
+
+  final BeachHouseGame game;
+
+  Player? _getPlayer() {
+    Player? findPlayer(Component component) {
+      if (component is Player) {
+        return component;
+      }
+
+      for (final child in component.children) {
+        final player = findPlayer(child);
+        if (player != null) {
+          return player;
+        }
+      }
+
+      return null;
+    }
+
+    for (final child in game.children) {
+      final player = findPlayer(child);
+      if (player != null) {
+        return player;
+      }
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Stack(
         children: [
-          // ================================================================
+          // =================================================================
           // D-PAD
-          // ================================================================
+          // =================================================================
 
           Positioned(
             left: 20,
-            bottom: 24,
+            bottom: 108,
             child: SizedBox(
               width: 150,
               height: 150,
@@ -268,13 +305,13 @@ class _MobileControls extends StatelessWidget {
             ),
           ),
 
-          // ================================================================
+          // =================================================================
           // ACTION BUTTONS
-          // ================================================================
+          // =================================================================
 
           Positioned(
             right: 22,
-            bottom: 28,
+            bottom: 112,
             child: SizedBox(
               width: 170,
               height: 150,
@@ -287,29 +324,35 @@ class _MobileControls extends StatelessWidget {
                     child: _ActionButton(
                       label: 'X',
                       color: const Color(0xFFB85C6A),
-                      onPressed: MobileInput.pressX,
+                      onPressed: () {
+                        _getPlayer()?.touchCat();
+                      },
                     ),
                   ),
 
-                  // Z - ENVIRONMENT
+                  // Z - ACTION
                   Positioned(
                     right: 62,
                     top: 0,
                     child: _ActionButton(
                       label: 'Z',
                       color: const Color(0xFF8E6570),
-                      onPressed: MobileInput.pressZ,
+                      onPressed: () {
+                        _getPlayer()?.touchAction();
+                      },
                     ),
                   ),
 
-                  // E - DOOR
+                  // E - INTERACT
                   Positioned(
                     right: 62,
                     bottom: 0,
                     child: _ActionButton(
                       label: 'E',
                       color: const Color(0xFF657B8E),
-                      onPressed: MobileInput.pressE,
+                      onPressed: () {
+                        _getPlayer()?.touchInteract();
+                      },
                     ),
                   ),
                 ],
@@ -321,7 +364,6 @@ class _MobileControls extends StatelessWidget {
     );
   }
 }
-
 // ===========================================================================
 // DIRECTION BUTTON
 // ===========================================================================
@@ -679,7 +721,7 @@ class _StartScreenState extends State<_StartScreen>
                       ),
                     ),
                     child: const Text(
-                      'PRESS F TO START',
+                      'Tap anywhere to begin',
                       style: TextStyle(
                         color: Color(0xFF604C40),
                         fontSize: 9,
@@ -691,14 +733,7 @@ class _StartScreenState extends State<_StartScreen>
 
                   const SizedBox(height: 8),
 
-                  const Text(
-                    'Tap anywhere to begin',
-                    style: TextStyle(
-                      color: Color(0xFF806D5D),
-                      fontSize: 8,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
+                  
                 ],
               ),
             ),

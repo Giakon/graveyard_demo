@@ -1,12 +1,50 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/task.dart';
 import '../services/task_service.dart';
 
-class TaskList extends StatelessWidget {
+class TaskList extends StatefulWidget {
   const TaskList({
     super.key,
   });
+
+  @override
+  State<TaskList> createState() => _TaskListState();
+}
+
+class _TaskListState extends State<TaskList> {
+  final Set<String> _hiddenCompletedTasks = {};
+  final Map<String, Timer> _timers = {};
+
+  @override
+  void dispose() {
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
+    _timers.clear();
+    super.dispose();
+  }
+
+  void _scheduleHide(Task task) {
+    if (_hiddenCompletedTasks.contains(task.title) ||
+        _timers.containsKey(task.title)) {
+      return;
+    }
+
+    _timers[task.title] = Timer(
+      const Duration(milliseconds: 1500),
+      () {
+        if (!mounted) return;
+
+        setState(() {
+          _hiddenCompletedTasks.add(task.title);
+          _timers.remove(task.title);
+        });
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +53,21 @@ class TaskList extends StatelessWidget {
       builder: (context, _) {
         final taskService = TaskService.instance;
 
+        // Schedule completed tasks to disappear.
+        for (final task in taskService.tasks) {
+          if (task.completed) {
+            _scheduleHide(task);
+          }
+        }
+
+        final visibleTasks = taskService.tasks
+            .where((task) => !_hiddenCompletedTasks.contains(task.title))
+            .toList();
+
         return Container(
-          width: 280,
+          width: 300,
           constraints: const BoxConstraints(
-            maxHeight: 500,
+            maxHeight: 150,
           ),
           padding: const EdgeInsets.fromLTRB(
             16,
@@ -73,7 +122,7 @@ class TaskList extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      for (final task in taskService.tasks)
+                      for (final task in visibleTasks)
                         _TaskRow(task: task),
                     ],
                   ),

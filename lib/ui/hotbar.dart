@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../inventory.dart';
-import 'package:flutter/foundation.dart';
 
 class Hotbar extends StatefulWidget {
   const Hotbar({required this.inventory, super.key});
@@ -27,42 +26,66 @@ class _HotbarState extends State<Hotbar> {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.white24,
-              width: 1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : 620.0;
+        final slotSize = ((availableWidth - 8) / 8 - 4)
+            .clamp(16.0, 36.0)
+            .toDouble();
+
+        final firstRow = widget.inventory.slots.take(8);
+        final secondRow = widget.inventory.slots.skip(8);
+
+        Widget buildRow(Iterable<InventorySlot?> slots) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: slots
+                .map((slot) => _HotbarSlot(slot: slot, size: slotSize))
+                .toList(),
+          );
+        }
+
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.white24,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  buildRow(firstRow),
+                  buildRow(secondRow),
+                ],
+              ),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(15, (index) {
-              final slot = widget.inventory.slots[index];
-              return _HotbarSlot(slot: slot);
-            }),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 class _HotbarSlot extends StatelessWidget {
-  const _HotbarSlot({required this.slot});
+  const _HotbarSlot({required this.slot, required this.size});
 
   final InventorySlot? slot;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 36,
+      width: size,
+      height: size,
       margin: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: slot != null
@@ -82,7 +105,7 @@ class _HotbarSlot extends StatelessWidget {
   child: slot!.item.icon is IconData
       ? Icon(
           slot!.item.icon as IconData,
-          size: 21,
+              size: size * 0.58,
           color: slot!.item.id == 'picnic_rug'
               ? Colors.amber
               : Colors.white,
@@ -98,9 +121,9 @@ class _HotbarSlot extends StatelessWidget {
                     bottom: 2,
                     child: Text(
                       '${slot!.count}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 9,
+                        fontSize: size * 0.25,
                         fontWeight: FontWeight.bold,
                         shadows: [
                           Shadow(

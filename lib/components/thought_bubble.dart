@@ -16,9 +16,9 @@ class ThoughtBubble extends PositionComponent {
   static const double charInterval = 0.04;
 
   static const double fadeSpeed = 2.0;
-  static const double bubbleWidth = 55.0;
-  static const double bubblePadding = 3.0;
-  static const double fontSize = 3.5;
+  static const double bubbleWidth = 72.0;
+  static const double bubblePadding = 4.0;
+  static const double fontSize = 5.0;
   static const double lineHeight = 1.4;
 
   bool get isDone => _fadingOut && _alpha <= 0;
@@ -50,7 +50,7 @@ class ThoughtBubble extends PositionComponent {
   )..layout(maxWidth: bubbleWidth - bubblePadding * 2);
 
   // add extra padding to prevent vertical overflow
-  return painter.height + bubblePadding * 2 + 10.0;
+  return painter.height + bubblePadding * 2 + 13.0;
 }
 
   @override
@@ -92,7 +92,7 @@ class ThoughtBubble extends PositionComponent {
     if (parentScaleX < 0) canvas.scale(-1, 1);
 
     final bubbleHeight = _calcBubbleHeight();
-    const dotsHeight = 8.0;
+    const dotsHeight = 10.0;
     // bubble sits above the dots, dots sit above the player
     // total offset from player center upward
     final bubbleTop = -(bubbleHeight + dotsHeight);
@@ -144,9 +144,9 @@ class ThoughtBubble extends PositionComponent {
 
     // thought dots — bottom of bubble going down to player
     final dotPositions = [
-      (Offset(0, -dotsHeight + 6), 1.8),
-      (Offset(1, -dotsHeight + 3.5), 1.2),
-      (Offset(1.5, -dotsHeight + 1.5), 0.8),
+      (Offset(0, -dotsHeight + 7), 2.3),
+      (Offset(1.2, -dotsHeight + 4.5), 1.5),
+      (Offset(1.8, -dotsHeight + 1.8), 1.0),
     ];
 
     for (final dot in dotPositions) {
@@ -161,7 +161,7 @@ class ThoughtBubble extends PositionComponent {
         Paint()
           ..color = Colors.black.withOpacity(_alpha * 0.12)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.4,
+          ..strokeWidth = 0.5,
       );
     }
 
@@ -173,7 +173,7 @@ class ThoughtBubble extends PositionComponent {
           color: Color.fromRGBO(40, 40, 40, _alpha),
           fontSize: fontSize,
           height: lineHeight,
-          letterSpacing: 0.2,
+          letterSpacing: 0.25,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -190,10 +190,10 @@ class ThoughtBubble extends PositionComponent {
 
     // dismiss hint pinned to bottom-right corner of bubble
     if (isFullyVisible && !_fadingOut) {
-      const hintText = 'Press F to dismiss';
-      const hintFontSize = 2.5;
-      const hintPaddingH = 2.0;
-      const hintPaddingV = 1.5;
+      const hintText = 'Tap anywhere to dismiss';
+      const hintFontSize = 3.2;
+      const hintPaddingH = 2.5;
+      const hintPaddingV = 2.0;
 
       final hintPainter = TextPainter(
         text: TextSpan(

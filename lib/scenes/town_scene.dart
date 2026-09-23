@@ -555,6 +555,7 @@ Future<void> _loadThoughts(TiledComponent sourceMap) async {
 
     game.camera.viewfinder.anchor =
         Anchor.center;
+    //game.camera.viewfinder.zoom = 1.0;
 
     game.camera.follow(player);
 
