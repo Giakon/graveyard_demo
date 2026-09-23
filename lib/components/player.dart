@@ -15,6 +15,7 @@ import 'cow.dart';
 import 'picnic_rug.dart';
 import '../data/task.dart';
 import '../services/task_service.dart';
+import '../mobile_input.dart';
 
 enum PlayerDirection { down, up, left, right }
 
@@ -32,6 +33,8 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
   final _keys = <LogicalKeyboardKey>{};
 
+  // Touch controls use the same logical directions as the keyboard.
+
   PlayerDirection _direction;
   PlayerState _state = PlayerState.idle;
 
@@ -46,6 +49,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   // Prevent the final completion message from appearing more than once.
   bool _completionThoughtShown = false;
   ThoughtBubble? _completionThoughtBubble;
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -62,13 +66,19 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       case PlayerDirection.down:
         scale.x = 1;
 
-        animations = {PlayerState.idle: _idleDown, PlayerState.walk: _walkDown};
+        animations = {
+          PlayerState.idle: _idleDown,
+          PlayerState.walk: _walkDown,
+        };
         break;
 
       case PlayerDirection.up:
         scale.x = 1;
 
-        animations = {PlayerState.idle: _idleUp, PlayerState.walk: _walkUp};
+        animations = {
+          PlayerState.idle: _idleUp,
+          PlayerState.walk: _walkUp,
+        };
         break;
 
       case PlayerDirection.left:
@@ -100,7 +110,11 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     final frame = await codec.getNextFrame();
     final spriteSheet = frame.image;
 
-    SpriteAnimation anim(int row, int frameCount, {double stepTime = 0.15}) {
+    SpriteAnimation anim(
+      int row,
+      int frameCount, {
+      double stepTime = 0.15,
+    }) {
       return SpriteAnimation.fromFrameData(
         spriteSheet,
         SpriteAnimationData.sequenced(
@@ -120,41 +134,38 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
     // Idle animations
     _idleDown = anim(0, 1, stepTime: 1.0);
-
     _idleRight = anim(1, 1, stepTime: 1.0);
-
     _idleUp = anim(2, 1, stepTime: 1.0);
   }
 
   @override
-  bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+  bool onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
     print('KEY EVENT: ${event.logicalKey.debugName}');
 
     _keys
       ..clear()
       ..addAll(keysPressed);
 
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyE) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyE) {
       _interactWithDoor();
     }
 
-    void _dismissThought() {
-      final bubbles = children.whereType<ThoughtBubble>();
-
-      for (final bubble in bubbles) {
-        bubble.dismiss();
-      }
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyF) {
+      touchDismissThought();
     }
 
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyF) {
-      _dismissThought();
-    }
-
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyX) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyX) {
       _interactWithCat();
     }
 
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyZ) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.keyZ) {
       // Try normal environment interaction first.
       //
       // If there wasn't one, try the cow and dress.
@@ -165,6 +176,34 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     }
 
     return true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // TOUCH INPUT
+  // ---------------------------------------------------------------------------
+
+
+  void touchInteract() {
+    _interactWithDoor();
+  }
+
+  void touchCat() {
+    _interactWithCat();
+  }
+
+  void touchAction() {
+    if (!_interactWithEnvironment()) {
+      _interactWithCow();
+      _interactWithDress();
+    }
+  }
+
+  void touchDismissThought() {
+    final bubbles = children.whereType<ThoughtBubble>();
+
+    for (final bubble in bubbles) {
+      bubble.dismiss();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -415,7 +454,10 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   // MISSING INGREDIENT MESSAGE
   // ---------------------------------------------------------------------------
 
-  void _showMissingIngredients(BeachHouseGame game, List<String> ingredients) {
+  void _showMissingIngredients(
+    BeachHouseGame game,
+    List<String> ingredients,
+  ) {
     final missing = ingredients
         .where((ingredient) => !game.inventory.has(ingredient))
         .toList();
@@ -442,7 +484,9 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
           'and ${missing.last}';
     }
 
-    final bubble = ThoughtBubble(fullText: 'I still need: $ingredientText.')
+    final bubble = ThoughtBubble(
+      fullText: 'I still need: $ingredientText.',
+    )
       ..position = Vector2(15, -8)
       ..priority = 999999;
 
@@ -559,27 +603,28 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   @override
   void update(double dt) {
     super.update(dt);
+
     final finishedBubbles = children
-    .whereType<ThoughtBubble>()
-    .where((b) => b.isDone)
-    .toList();
+        .whereType<ThoughtBubble>()
+        .where((b) => b.isDone)
+        .toList();
 
-for (final bubble in finishedBubbles) {
-  final wasCompletionBubble =
-      identical(bubble, _completionThoughtBubble);
+    for (final bubble in finishedBubbles) {
+      final wasCompletionBubble =
+          identical(bubble, _completionThoughtBubble);
 
-  bubble.removeFromParent();
+      bubble.removeFromParent();
 
-  if (wasCompletionBubble) {
-    _completionThoughtBubble = null;
+      if (wasCompletionBubble) {
+        _completionThoughtBubble = null;
 
-    final game = findGame() as BeachHouseGame?;
+        final game = findGame() as BeachHouseGame?;
 
-    if (game != null) {
-      game.startEnding();
+        if (game != null) {
+          game.startEnding();
+        }
+      }
     }
-  }
-}
 
     final game = findGame()! as BeachHouseGame;
 
@@ -593,40 +638,39 @@ for (final bubble in finishedBubbles) {
     // ALL TASKS COMPLETED
     // -------------------------------------------------------------------------
 
-    if (TaskService.instance.allCompleted && !_completionThoughtShown) {
-      final hasThoughtBubble = children.whereType<ThoughtBubble>().any(
-        (b) => !b.isDone,
-      );
+    if (TaskService.instance.allCompleted &&
+        !_completionThoughtShown) {
+      final hasThoughtBubble = children
+          .whereType<ThoughtBubble>()
+          .any((b) => !b.isDone);
 
       if (!hasThoughtBubble) {
         _completionThoughtShown = true;
 
-        final bubble =
-            ThoughtBubble(
-                fullText:
-                    "Everything is set. Let's wake up my love "
-                    "and make sure she has the best day ever.",
-              )
-              ..position = Vector2(15, -8)
-              ..priority = 999999;
+        final bubble = ThoughtBubble(
+          fullText:
+              "Everything is set. Let's wake up my love "
+              "and make sure she has the best day ever.",
+        )
+          ..position = Vector2(15, -8)
+          ..priority = 999999;
 
         _completionThoughtBubble = bubble;
 
         add(bubble);
       }
     }
+
     priority = 1000 + position.y.toInt();
 
     final dx = _horizontal();
     final dy = _vertical();
 
-    // print('MOVEMENT dx=$dx dy=$dy');
-
     final moving = dx != 0 || dy != 0;
 
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Direction
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     if (dy > 0) {
       _direction = PlayerDirection.down;
@@ -642,14 +686,13 @@ for (final bubble in finishedBubbles) {
       scale.x = 1;
     }
 
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Animation
-    //
-    // Only change the animation when it actually changes.
-    // Do NOT recreate the animations map every frame.
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
-    final newState = moving ? PlayerState.walk : PlayerState.idle;
+    final newState = moving
+        ? PlayerState.walk
+        : PlayerState.idle;
 
     final SpriteAnimation newAnimation;
 
@@ -671,8 +714,6 @@ for (final bubble in finishedBubbles) {
 
     final currentAnimation = animations![newState];
 
-    // Only replace the animation if we
-    // actually changed direction/state.
     if (!identical(currentAnimation, newAnimation)) {
       animations = {
         PlayerState.idle: newState == PlayerState.idle
@@ -688,9 +729,9 @@ for (final bubble in finishedBubbles) {
       current = newState;
     }
 
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Movement
-    // ------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     if (!moving) {
       return;
@@ -705,7 +746,6 @@ for (final bubble in finishedBubbles) {
     final movement = velocity * speed * dt;
 
     _moveAxis(movement.x, true);
-
     _moveAxis(movement.y, false);
   }
 
@@ -742,13 +782,6 @@ for (final bubble in finishedBubbles) {
   }
 
   bool _collidesAt(Vector2 testPosition) {
-    // Smaller collision box around
-    // the player's feet.
-    //
-    // The sprite is 32x32, but only
-    // the lower part of the character
-    // should collide with walls/fences.
-
     const hitboxWidth = 12.0;
     const hitboxHeight = 8.0;
 
@@ -759,7 +792,8 @@ for (final bubble in finishedBubbles) {
       hitboxHeight,
     );
 
-    final blocks = parent?.children.whereType<CollisionBlock>() ?? [];
+    final blocks =
+        parent?.children.whereType<CollisionBlock>() ?? [];
 
     for (final block in blocks) {
       final blockRect = Rect.fromLTWH(
@@ -780,42 +814,43 @@ for (final bubble in finishedBubbles) {
   // ---------------------------------------------------------------------------
   // INPUT
   // ---------------------------------------------------------------------------
-
-  double _horizontal() {
-    // Block movement if thought bubble
-    // is showing.
-    if (children.whereType<ThoughtBubble>().any((b) => !b.isDone)) {
-      return 0;
-    }
-
-    if (_keys.contains(LogicalKeyboardKey.arrowLeft) ||
-        _keys.contains(LogicalKeyboardKey.keyA)) {
-      return -1;
-    }
-
-    if (_keys.contains(LogicalKeyboardKey.arrowRight) ||
-        _keys.contains(LogicalKeyboardKey.keyD)) {
-      return 1;
-    }
-
+double _horizontal() {
+  if (children.whereType<ThoughtBubble>().any((b) => !b.isDone)) {
     return 0;
   }
+
+  if (_keys.contains(LogicalKeyboardKey.arrowLeft) ||
+      _keys.contains(LogicalKeyboardKey.keyA) ||
+      MobileInput.left) {
+    return -1;
+  }
+
+  if (_keys.contains(LogicalKeyboardKey.arrowRight) ||
+      _keys.contains(LogicalKeyboardKey.keyD) ||
+      MobileInput.right) {
+    return 1;
+  }
+
+  return 0;
+}
 
   double _vertical() {
-    if (children.whereType<ThoughtBubble>().any((b) => !b.isDone)) {
-      return 0;
-    }
-
-    if (_keys.contains(LogicalKeyboardKey.arrowUp) ||
-        _keys.contains(LogicalKeyboardKey.keyW)) {
-      return -1;
-    }
-
-    if (_keys.contains(LogicalKeyboardKey.arrowDown) ||
-        _keys.contains(LogicalKeyboardKey.keyS)) {
-      return 1;
-    }
-
+  if (children.whereType<ThoughtBubble>().any((b) => !b.isDone)) {
     return 0;
   }
+
+  if (_keys.contains(LogicalKeyboardKey.arrowUp) ||
+      _keys.contains(LogicalKeyboardKey.keyW) ||
+      MobileInput.up) {
+    return -1;
+  }
+
+  if (_keys.contains(LogicalKeyboardKey.arrowDown) ||
+      _keys.contains(LogicalKeyboardKey.keyS) ||
+      MobileInput.down) {
+    return 1;
+  }
+
+  return 0;
+}
 }
