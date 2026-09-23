@@ -545,29 +545,25 @@ Future<void> _loadThoughts(TiledComponent sourceMap) async {
   // ============================================================
   // CAMERA
   // ============================================================
+@override
+void onMount() {
+  super.onMount();
 
-  @override
-  void onMount() {
-    super.onMount();
+  final game = findGame()! as BeachHouseGame;
 
-    final game =
-        findGame()! as BeachHouseGame;
+  game.camera.viewfinder.anchor = Anchor.center;
 
-    game.camera.viewfinder.anchor =
-        Anchor.center;
-    //game.camera.viewfinder.zoom = 1.0;
+  game.camera.follow(player);
 
-    game.camera.follow(player);
+  game.camera.setBounds(
+    Rectangle.fromLTRB(
+      0,
+      0,
+      640,
+      400,
+    ),
+  );
 
-    game.camera.setBounds(
-      Rectangle.fromLTRB(
-        160,
-        100,
-        480,
-        300,
-      ),
-    );
-
-    setupCat();
-  }
+  setupCat();
+}
 }
